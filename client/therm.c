@@ -6,6 +6,10 @@ CSE30264 - Computer Networks
 Project 2 - Thermal Sensor Client
 */
 
+/* Go! Temp reader code used in getSensorInfo() function
+written by Jeff Sadowski <jeff.sadowski@gmail.com>
+*/
+
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -13,21 +17,67 @@ Project 2 - Thermal Sensor Client
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/time.h>
+#include <time.h>
 
 #include <errno.h>
 
 #define DPORT 9765
 
+double getSensorInfo(int i){
+
+	char* fileName;
+
+	if( i == 1 ){
+		fileName = "/dev/gotemp";
+	}else if( i == 2){
+		fileName = "/dev/gotemp2";
+	}else{
+		return 0;
+	}
+	
+	struct packet {
+		unsigned char measurements;
+		unsigned char counter;
+		int16_t measurement0;
+		int16_t measurement1;
+		int16_t measurement2; 
+	};
+	
+	int fd = open(fileName,O_RDONLY);
+	
+	struct packet temp;
+	
+	read(fd,&temp,sizeof(temp));
+	
+	float conversion=0.0078125;
+	return (temp.measurement0*conversion);
+}
+
 int main( int argc, char *argv[] ){
+
+	struct tempdata{
+		char host[32];
+		int nSensors;
+		double sensorData;
+		double lowVal;
+		double highVal;
+		char timestamp[32];
+		int action;
+	};
+	
+	struct tempdata temp0, temp1;
 
 	int sockfd, port;
 	struct sockaddr_in serverAddr;
 	struct hostent *hostname;
+	FILE *fp;
 	
 	int exit = 0;
 	
@@ -62,6 +112,106 @@ int main( int argc, char *argv[] ){
 		printf("Connected to host %s (%s) on port %d\n",argv[1],inet_ntoa(serverAddr.sin_addr),port);
 	#endif
 	
-	// Read sensor info and send to host
-
+	
+	// Read sensor info to struct
+	
+	int numSensors = 0;
+	char *cLowTemp = (char*)malloc(5); 
+	char *cHighTemp = (char*)malloc(5);
+	fp = fopen("/etc/t_client/client.conf","r");
+	
+	if(fp == NULL){ printf("File open error\n"); }
+	char *line = NULL;
+	size_t len;
+	getline(&line, &len, fp);
+	
+	numSensors = atoi(line);
+	temp0.nSensors = numSensors;
+	temp1.nSensors = numSensors;
+	
+	struct tm *systime;
+	time_t rtime;
+	time( &rtime );
+	systime = localtime( &rtime );
+	char timestamp[32];
+	strcpy(timestamp, asctime(systime));
+	int i = 0;
+  while(timestamp[i] != '\n'){
+  	i++;
+  }
+  timestamp[i] = 0;
+	
+	if(numSensors >= 1){
+		
+		line = NULL;
+		getline(&line, &len, fp);
+		strncpy(cLowTemp, line, 4);
+		strncpy(cHighTemp, line+5, 4);
+		temp0.lowVal = atof(cLowTemp);
+		temp0.highVal = atof(cHighTemp);
+		
+		temp0.nSensors = numSensors;
+		gethostname(temp0.host, len);
+		temp0.sensorData = getSensorInfo(1);
+		strcpy(temp0.timestamp, timestamp);
+		temp0.action = 0;
+		
+		#ifdef DEBUG
+			printf("Sensor 0 info:\n");
+			printf("Number of sensors: %d\n",temp0.nSensors);
+			printf("Host: %s\n",temp0.host);
+			printf("Temperature: %lf\n",temp0.sensorData);
+			printf("Low Threshold: %lf\n",temp0.lowVal);
+			printf("High Threshold: %lf\n",temp0.highVal);
+			printf("Time: %s\n",temp0.timestamp);
+			printf("Action: %s\n\n",(temp0.action == 0)?"send":"request status");
+		#endif
+	
+	}
+	
+	if(numSensors == 2){
+		
+		line = NULL;
+		getline(&line, &len, fp);
+		strncpy(cLowTemp, line, 4);
+		strncpy(cHighTemp, line+5, 4);
+		temp1.lowVal = atof(cLowTemp);
+		temp1.highVal = atof(cHighTemp);
+		
+		temp0.nSensors = numSensors;
+		gethostname(temp0.host, len);
+		temp0.sensorData = getSensorInfo(2);
+		strcpy(temp0.timestamp, timestamp);
+		temp0.action = 0;
+	
+	
+	
+		#ifdef DEBUG
+			printf("Sensor 1 info:\n");
+			printf("Number of sensors: %d\n",temp0.nSensors);
+			printf("Host: %s\n",temp0.host);
+			printf("Temperature: %lf\n",temp0.sensorData);
+			printf("Low Threshold: %lf\n",temp0.lowVal);
+			printf("High Threshold: %lf\n",temp0.highVal);
+			printf("Time: %s\n",temp0.timestamp);
+			printf("Action: %s\n\n",(temp0.action == 0)?"send":"request status");
+		#endif
+		
+	}
+	
+	// Send struct(s) to server
+	
+	// Send struct 1
+	if(numSensors >= 1){
+		write(sockfd, (char *)&temp0, sizeof(temp0));
+	}
+	
+	// Send struct 2
+	if(numSensors == 2){
+		write(sockfd, (char *)&temp1, sizeof(temp1));
+	}
+	
+	fclose(fp);
+	free(cLowTemp);
+	free(cHighTemp);
 }
