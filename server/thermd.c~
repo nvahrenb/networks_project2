@@ -217,8 +217,6 @@ int unpack(struct tempdata * package, int sock)
 
 		i++;
 	}
-	
-	return 0;
 }
 
 int main( int argc, char *argv[] ){
