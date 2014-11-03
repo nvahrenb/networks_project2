@@ -60,18 +60,17 @@ double getSensorInfo(int i){
 	return (temp.measurement0*conversion);
 }
 
-struct tempdata{
-	char host[32];
-	int nSensors;
-	double sensorData;
-	double lowVal;
-	double highVal;
-	char timestamp[32];
-	int action;
-};
-
 int main( int argc, char *argv[] ){
 
+	struct tempdata{
+		char host[32];
+		int nSensors;
+		double sensorData;
+		double lowVal;
+		double highVal;
+		char timestamp[32];
+		int action;
+	};
 	
 	struct tempdata temp0, temp1;
 
