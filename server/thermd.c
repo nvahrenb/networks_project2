@@ -22,7 +22,7 @@ Project 2 - Thermal Sensor Server
 
 #define DPORT 9765
 
-#define DEBUG
+//#define DEBUG
 
 struct tempdata{
 	char host[32];
@@ -225,6 +225,8 @@ int unpack(struct tempdata * package, int sock)
 int writeToFile(void * param)
 {
 	int * s = (int * ) param;
+	FILE * fp;
+	char * year, month, day, hour, minute, group;
 	struct tempdata package1, package2;
 
 	if(unpack(&package1, *s) < 0)
@@ -232,6 +234,12 @@ int writeToFile(void * param)
 		perror("Error unpacking structure");
 		return -1;
 	}
+
+	if(package1.action == 0)
+	{
+		
+	}
+	
 
 	if(package1.nSensors == 2)
 	{
@@ -241,6 +249,8 @@ int writeToFile(void * param)
 			return -1;
 		}
 	}
+
+	
 	
 	#ifdef DEBUG
 		printf("Received info:\n");

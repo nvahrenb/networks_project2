@@ -22,7 +22,7 @@ Project 2 - Thermal Sensor Server
 
 #define DPORT 9765
 
-#define DEBUG
+//#define DEBUG
 
 struct tempdata{
 	char host[32];
@@ -233,6 +233,12 @@ int writeToFile(void * param)
 		return -1;
 	}
 
+	if(package1.action == 0)
+	{
+		
+	}
+	
+
 	if(package1.nSensors == 2)
 	{
 		if(unpack(&package2, *s) < 0)
@@ -241,16 +247,18 @@ int writeToFile(void * param)
 			return -1;
 		}
 	}
+
+	
 	
 	#ifdef DEBUG
 		printf("Received info:\n");
-		printf("Number of sensors: %d\n",package1.nSensors);
-		printf("Host: %s\n",package1.host);
-		printf("Temperature: %lf\n",package1.sensorData);
-		printf("Low Threshold: %lf\n",package1.lowVal);
-		printf("High Threshold: %lf\n",package1.highVal);
-		printf("Time: %s\n",package1.timestamp);
-		printf("Action: %s\n\n",(package1.action == 0)?"send":"request status");
+		printf("Number of sensors: %d\n",package2.nSensors);
+		printf("Host: %s\n",package2.host);
+		printf("Temperature: %lf\n",package2.sensorData);
+		printf("Low Threshold: %lf\n",package2.lowVal);
+		printf("High Threshold: %lf\n",package2.highVal);
+		printf("Time: %s\n",package2.timestamp);
+		printf("Action: %s\n\n",(package2.action == 0)?"send":"request status");
 	#endif
 	
 }
