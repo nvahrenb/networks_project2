@@ -225,28 +225,32 @@ int unpack(struct tempdata * package, int sock)
 int writeToFile(void * param)
 {
 	int * s = (int * ) param;
-	struct tempdata package;
+	struct tempdata package1, package2;
 
-	if(unpack(&package, *s) < 0)
+	if(unpack(&package1, *s) < 0)
 	{
 		perror("Error unpacking structure");
 		return -1;
 	}
 
-	if(package.nSensors == 2)
+	if(package1.nSensors == 2)
 	{
-		printf("caught the second batch\n");
+		if(unpack(&package2, *s) < 0)
+		{
+			perror("Error unpacking structure");
+			return -1;
+		}
 	}
 	
 	#ifdef DEBUG
 		printf("Received info:\n");
-		printf("Number of sensors: %d\n",package.nSensors);
-		printf("Host: %s\n",package.host);
-		printf("Temperature: %lf\n",package.sensorData);
-		printf("Low Threshold: %lf\n",package.lowVal);
-		printf("High Threshold: %lf\n",package.highVal);
-		printf("Time: %s\n",package.timestamp);
-		printf("Action: %s\n\n",(package.action == 0)?"send":"request status");
+		printf("Number of sensors: %d\n",package2.nSensors);
+		printf("Host: %s\n",package2.host);
+		printf("Temperature: %lf\n",package2.sensorData);
+		printf("Low Threshold: %lf\n",package2.lowVal);
+		printf("High Threshold: %lf\n",package2.highVal);
+		printf("Time: %s\n",package2.timestamp);
+		printf("Action: %s\n\n",(package2.action == 0)?"send":"request status");
 	#endif
 	
 }
