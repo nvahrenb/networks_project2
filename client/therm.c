@@ -30,6 +30,8 @@ written by Jeff Sadowski <jeff.sadowski@gmail.com>
 
 #define DPORT 9765
 
+//#define DEBUG
+
 double getSensorInfo(int i){
 
 	char* fileName;
@@ -81,7 +83,7 @@ int packAndSend(struct tempdata * package, int sock)
 		switch(i)
 		{
 			case 0:
-			size = htonl(strlen(package->host));
+			size = htonl(sizeof(package->host));
 			outBytes = send(sock, &size, sizeof(size), 0);
 			if(outBytes < 0)
 			{
@@ -99,7 +101,7 @@ int packAndSend(struct tempdata * package, int sock)
 
 			case 1:
 			sprintf(str, "%d", package->nSensors);
-			size = htonl(strlen(str));
+			size = htonl(sizeof(str));
 			outBytes = send(sock, &size, sizeof(size), 0);
 			if(outBytes < 0)
 			{
@@ -117,7 +119,7 @@ int packAndSend(struct tempdata * package, int sock)
 
 			case 2:
 			sprintf(str, "%f", package->sensorData);
-			size = htonl(strlen(str));
+			size = htonl(sizeof(str));
 			outBytes = send(sock, &size, sizeof(size), 0);
 			if(outBytes < 0)
 			{
@@ -135,7 +137,7 @@ int packAndSend(struct tempdata * package, int sock)
 
 			case 3:
 			sprintf(str, "%f", package->lowVal);
-			size = htonl(strlen(str));
+			size = htonl(sizeof(str));
 			outBytes = send(sock, &size, sizeof(size), 0);
 			if(outBytes < 0)
 			{
@@ -153,7 +155,7 @@ int packAndSend(struct tempdata * package, int sock)
 
 			case 4:
 			sprintf(str, "%f", package->highVal);
-			size = htonl(strlen(str));
+			size = htonl(sizeof(str));
 			outBytes = send(sock, &size, sizeof(size), 0);
 			if(outBytes < 0)
 			{
@@ -170,7 +172,7 @@ int packAndSend(struct tempdata * package, int sock)
 			break;
 
 			case 5:
-			size = htonl(strlen(package->timestamp));
+			size = htonl(sizeof(package->timestamp));
 			outBytes = send(sock, &size, sizeof(size), 0);
 			if(outBytes < 0)
 			{
@@ -188,7 +190,7 @@ int packAndSend(struct tempdata * package, int sock)
 
 			case 6:
 			sprintf(str, "%d", package->action);
-			size = htonl(strlen(str));
+			size = htonl(sizeof(str));
 			outBytes = send(sock, &size, sizeof(size), 0);
 			if(outBytes < 0)
 			{
@@ -204,8 +206,7 @@ int packAndSend(struct tempdata * package, int sock)
 			}
 			break;
 		}
-
-		i++;
+		printf("%d, %d, %d \n", i, ntohl(size), outBytes);
 	}
 
 	free(str);

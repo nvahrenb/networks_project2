@@ -22,6 +22,8 @@ Project 2 - Thermal Sensor Server
 
 #define DPORT 9765
 
+#define DEBUG
+
 struct tempdata{
 	char host[32];
 	int nSensors;
@@ -110,8 +112,9 @@ int unpack(struct tempdata * package, int sock)
 					return -1;
 				}
 				totalBytes += inBytes;
+				printf("%d ", totalBytes);
 			}
-
+			printf("exit ");
 			(package->sensorData) = atof(tmp);
 			free(tmp);
 			break;
@@ -216,8 +219,7 @@ int unpack(struct tempdata * package, int sock)
 			free(tmp);
 			break;
 		}
-
-		i++;
+		printf("%d, %d, %d\n", i, size, totalBytes); 
 	}
 	
 	return 0;
@@ -226,7 +228,6 @@ int unpack(struct tempdata * package, int sock)
 int writeToFile(void * param)
 {
 	int * s = (int * ) param;
-
 	struct tempdata package;
 
 	if(unpack(&package, *s) < 0)
@@ -302,7 +303,8 @@ int main( int argc, char *argv[] ){
 			printf("Client connected from %s\n",inet_ntoa(clientAddr.sin_addr));
 		#endif
 		
-		pthread_create(&id, NULL, (void * ) writeToFile, (void * ) &conn);
+		//pthread_create(&id, NULL, (void * ) writeToFile, (void * ) &conn);
+		writeToFile((void *) &conn);
 		
 	}
 
