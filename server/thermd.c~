@@ -223,9 +223,17 @@ int unpack(struct tempdata * package, int sock)
 	return 0;
 }
 
-int writeToFile(struct tempdata * package)
+int writeToFile(void * param)
 {
-	
+	int * s = (int * ) param;
+
+	struct tempdata package;
+
+	if(unpack(&package) < 0)
+	{
+		perror("Error unpacking structure");
+		return -1;
+	}
 }
 
 int main( int argc, char *argv[] ){
@@ -278,7 +286,7 @@ int main( int argc, char *argv[] ){
 		// Accept a connection
 		conn = accept(sockfd, (struct sockaddr *)&clientAddr, &csize);
 
-		pthread_create(&id, NULL, writeToFile, &conn);
+		pthread_create(&id, NULL, (void * ) writeToFile, (void * ) &conn);
 		
 	
 		#ifdef DEBUG

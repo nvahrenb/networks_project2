@@ -223,9 +223,17 @@ int unpack(struct tempdata * package, int sock)
 	return 0;
 }
 
-int writeToFile(struct tempdata * package)
+int writeToFile(void * param)
 {
-	
+	int * s = (int * ) param;
+
+	struct tempdata package;
+
+	if(unpack(&package, *s) < 0)
+	{
+		perror("Error unpacking structure");
+		return -1;
+	}
 }
 
 int main( int argc, char *argv[] ){
