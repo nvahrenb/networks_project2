@@ -74,7 +74,7 @@ int packAndSend(struct tempdata * package, int sock)
 {
 	int i, outBytes;
 	uint32_t size;
-	char * str;
+	char * str = (char*)malloc(12);
 
 	for(i = 0; i < 7; i++)
 	{
@@ -208,6 +208,7 @@ int packAndSend(struct tempdata * package, int sock)
 		i++;
 	}
 
+	free(str);
 	return 0;
 }
 
