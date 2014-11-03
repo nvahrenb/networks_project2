@@ -234,6 +234,18 @@ int writeToFile(void * param)
 		perror("Error unpacking structure");
 		return -1;
 	}
+	
+	#ifdef DEBUG
+		printf("Received info:\n");
+		printf("Number of sensors: %d\n",package.nSensors);
+		printf("Host: %s\n",package.host);
+		printf("Temperature: %lf\n",package.sensorData);
+		printf("Low Threshold: %lf\n",package.lowVal);
+		printf("High Threshold: %lf\n",package.highVal);
+		printf("Time: %s\n",package.timestamp);
+		printf("Action: %s\n\n",(package.action == 0)?"send":"request status");
+	#endif
+	
 }
 
 int main( int argc, char *argv[] ){
@@ -285,16 +297,13 @@ int main( int argc, char *argv[] ){
 	
 		// Accept a connection
 		conn = accept(sockfd, (struct sockaddr *)&clientAddr, &csize);
-
-		pthread_create(&id, NULL, (void * ) writeToFile, (void * ) &conn);
 		
-	
 		#ifdef DEBUG
 			printf("Client connected from %s\n",inet_ntoa(clientAddr.sin_addr));
 		#endif
 		
-		// Get sensor info from client
-	
+		pthread_create(&id, NULL, (void * ) writeToFile, (void * ) &conn);
+		
 	}
 
 
