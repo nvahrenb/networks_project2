@@ -18,6 +18,8 @@ Project 2 - Thermal Sensor Server
 
 #include <errno.h>
 
+#include <pthread.h>
+
 #define DPORT 9765
 
 struct tempdata{
@@ -221,9 +223,15 @@ int unpack(struct tempdata * package, int sock)
 	return 0;
 }
 
+int writeToFile(struct tempdata * package)
+{
+	
+}
+
 int main( int argc, char *argv[] ){
 
 	int sockfd, port, conn;
+	pthread_t id;
 	struct sockaddr_in clientAddr, serverAddr;
 	socklen_t csize = sizeof(clientAddr);
 	
@@ -269,6 +277,9 @@ int main( int argc, char *argv[] ){
 	
 		// Accept a connection
 		conn = accept(sockfd, (struct sockaddr *)&clientAddr, &csize);
+
+		pthread_create(&id, NULL, (void * ) writeToFile, (void * ) &conn);
+		
 	
 		#ifdef DEBUG
 			printf("Client connected from %s\n",inet_ntoa(clientAddr.sin_addr));
