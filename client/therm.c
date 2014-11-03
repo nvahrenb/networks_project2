@@ -70,6 +70,147 @@ struct tempdata{
 	int action;
 };
 
+int packAndSend(struct tempdata * package, int sock)
+{
+	int i, outBytes;
+	uint32_t size;
+	char * str;
+
+	for(i = 0; i < 7; i++)
+	{
+		switch(i)
+		{
+			case 0:
+			size = htonl(strlen(package->host));
+			outBytes = send(sock, &size, sizeof(size), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer size");
+				return -1;
+			}
+
+			outBytes = send(sock, package->host, sizeof(package->host), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer");
+				return -1;
+			}
+			break;
+
+			case 1:
+			sprintf(str, "%d", package->nSensors);
+			size = htonl(strlen(str));
+			outBytes = send(sock, &size, sizeof(size), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer size");
+				return -1;
+			}
+
+			outBytes = send(sock, str, sizeof(str), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer");
+				return -1;
+			}
+			break;
+
+			case 2:
+			sprintf(str, "%f", package->sensorData);
+			size = htonl(strlen(str));
+			outBytes = send(sock, &size, sizeof(size), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer size");
+				return -1;
+			}
+
+			outBytes = send(sock, str, sizeof(str), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer");
+				return -1;
+			}
+			break;
+
+			case 3:
+			sprintf(str, "%f", package->lowVal);
+			size = htonl(strlen(str));
+			outBytes = send(sock, &size, sizeof(size), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer size");
+				return -1;
+			}
+
+			outBytes = send(sock, str, sizeof(str), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer");
+				return -1;
+			}
+			break;
+
+			case 4:
+			sprintf(str, "%f", package->highVal);
+			size = htonl(strlen(str));
+			outBytes = send(sock, &size, sizeof(size), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer size");
+				return -1;
+			}
+
+			outBytes = send(sock, str, sizeof(str), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer");
+				return -1;
+			}
+			break;
+
+			case 5:
+			size = htonl(strlen(package->timestamp));
+			outBytes = send(sock, &size, sizeof(size), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer size");
+				return -1;
+			}
+
+			outBytes = send(sock, package->timestamp, sizeof(package->timestamp), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer");
+				return -1;
+			}
+			break;
+
+			case 6:
+			sprintf(str, "%d", package->action);
+			size = htonl(strlen(str));
+			outBytes = send(sock, &size, sizeof(size), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer size");
+				return -1;
+			}
+
+			outBytes = send(sock, str, sizeof(str), 0);
+			if(outBytes < 0)
+			{
+				perror("Error sending buffer");
+				return -1;
+			}
+			break;
+		}
+
+		i++;
+	}
+
+	return 0;
+}
+
 int main( int argc, char *argv[] ){
 
 	
@@ -204,12 +345,22 @@ int main( int argc, char *argv[] ){
 	
 	// Send struct 1
 	if(numSensors >= 1){
-		write(sockfd, (char *)&temp0, sizeof(temp0));
+		//write(sockfd, (char *)&temp0, sizeof(temp0));
+		if(packAndSend(&temp0, sockfd) < 0)
+		{
+			perror("Error sending temp0");
+			return 0;
+		}
 	}
 	
 	// Send struct 2
 	if(numSensors == 2){
-		write(sockfd, (char *)&temp1, sizeof(temp1));
+		//write(sockfd, (char *)&temp1, sizeof(temp1));
+		if(packAndSend(&temp1, sockfd) < 0)
+		{
+			perror("Error sending temp0");
+			return 0;
+		}
 	}
 	
 	fclose(fp);
