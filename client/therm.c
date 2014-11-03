@@ -32,6 +32,8 @@ written by Jeff Sadowski <jeff.sadowski@gmail.com>
 
 #define DEBUG
 
+
+
 double getSensorInfo(int i){
 
 	char* fileName;
@@ -77,6 +79,7 @@ int packAndSend(struct tempdata * package, int sock)
 	int i, outBytes;
 	uint32_t size;
 	char * str = (char*)malloc(12);
+	FILE *error_fp = fopen("/var/log/therm/error/g04_error_log","a");
 
 	for(i = 0; i < 7; i++)
 	{
@@ -88,6 +91,7 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer size");
+				fprintf(error_fp,"Error sending buffer size");
 				return -1;
 			}
 
@@ -95,6 +99,7 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer");
+				fprintf(error_fp,"Error sending buffer");
 				return -1;
 			}
 			break;
@@ -106,6 +111,7 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer size");
+				fprintf(error_fp,"Error sending buffer size");
 				return -1;
 			}
 
@@ -113,6 +119,7 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer");
+				fprintf(error_fp,"Error sending buffer");
 				return -1;
 			}
 			break;
@@ -124,6 +131,7 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer size");
+				fprintf(error_fp,"Error sending buffer size");
 				return -1;
 			}
 
@@ -131,6 +139,7 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer");
+				fprintf(error_fp,"Error sending buffer");
 				return -1;
 			}
 			break;
@@ -142,6 +151,7 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer size");
+				fprintf(error_fp,"Error sending buffer size");
 				return -1;
 			}
 
@@ -149,6 +159,7 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer");
+				fprintf(error_fp,"Error sending buffer");
 				return -1;
 			}
 			break;
@@ -160,6 +171,7 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer size");
+				fprintf(error_fp,"Error sending buffer size");
 				return -1;
 			}
 
@@ -167,6 +179,7 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer");
+				fprintf(error_fp,"Error sending buffer");
 				return -1;
 			}
 			break;
@@ -177,6 +190,7 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer size");
+				fprintf(error_fp,"Error sending buffer size");
 				return -1;
 			}
 
@@ -184,6 +198,7 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer");
+				fprintf(error_fp,"Error sending buffer");
 				return -1;
 			}
 			break;
@@ -195,6 +210,7 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer size");
+				fprintf(error_fp,"Error sending buffer size");
 				return -1;
 			}
 
@@ -202,12 +218,14 @@ int packAndSend(struct tempdata * package, int sock)
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer");
+				fprintf(error_fp,"Error sending buffer");
 				return -1;
 			}
 			break;
 		}
 	}
 
+	fclose(error_fp);
 	free(str);
 	return 0;
 }
@@ -221,17 +239,20 @@ int main( int argc, char *argv[] ){
 	struct sockaddr_in serverAddr;
 	struct hostent *hostname;
 	FILE *fp;
+	FILE *error_fp = fopen("/var/log/therm/error/g04_error_log","a");
 	
 	int exit = 0;
 	
 	// Open socket
 	if( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ){
 		perror( "Unable to open socket" ); return 0;
+		fprintf(error_fp,"Unable to open socket");
 	}
 	
 	// Get host address from 1st arg
 	if( (hostname = gethostbyname(argv[1])) == 0 ){
 		perror( "Unable to get address of host"); return 0;
+		fprintf(error_fp,"Unable to get address of host");
 	}
 	
 	// Set port number
@@ -248,7 +269,9 @@ int main( int argc, char *argv[] ){
 	
 	// Connect to host
 	if( (connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr))) < 0 ){
-		perror("Unable to connect to host"); return 0;
+		perror("Unable to connect to host");
+		fprintf(error_fp,"Unable to connect to host");
+		return 0;
 	}
 	
 	#ifdef DEBUG
@@ -263,7 +286,10 @@ int main( int argc, char *argv[] ){
 	char *cHighTemp = (char*)malloc(5);
 	fp = fopen("/etc/t_client/client.conf","r");
 	
-	if(fp == NULL){ printf("File open error\n"); }
+	if(fp == NULL){
+		printf("File open error\n"); 
+		fprintf(error_fp,"File open error");
+	}
 	char *line = NULL;
 	size_t len;
 	getline(&line, &len, fp);
@@ -350,6 +376,7 @@ int main( int argc, char *argv[] ){
 		if(packAndSend(&temp0, sockfd) < 0)
 		{
 			perror("Error sending temp0");
+			fprintf(error_fp,"Error sending temp0");
 			return 0;
 		}
 	}
@@ -359,11 +386,13 @@ int main( int argc, char *argv[] ){
 		//write(sockfd, (char *)&temp1, sizeof(temp1));
 		if(packAndSend(&temp1, sockfd) < 0)
 		{
-			perror("Error sending temp0");
+			perror("Error sending temp1");
+			fprintf(error_fp,"Error sending temp1");
 			return 0;
 		}
 	}
 	
+	fclose(error_fp);
 	fclose(fp);
 	free(cLowTemp);
 	free(cHighTemp);
