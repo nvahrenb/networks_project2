@@ -61,7 +61,7 @@ double getSensorInfo(int i){
 	read(fd,&temp,sizeof(temp));
 	
 	float conversion=0.0078125;
-	return (temp.measurement0*conversion);
+	return (temp.measurement0*conversion * 9 / 5 + 32);
 }
 
 struct tempdata{
