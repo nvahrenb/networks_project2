@@ -30,7 +30,7 @@ written by Jeff Sadowski <jeff.sadowski@gmail.com>
 
 #define DPORT 9765
 
-//#define DEBUG
+#define DEBUG
 
 double getSensorInfo(int i){
 
@@ -206,7 +206,6 @@ int packAndSend(struct tempdata * package, int sock)
 			}
 			break;
 		}
-		printf("%d, %d, %d \n", i, ntohl(size), outBytes);
 	}
 
 	free(str);
@@ -322,23 +321,23 @@ int main( int argc, char *argv[] ){
 		temp1.lowVal = atof(cLowTemp);
 		temp1.highVal = atof(cHighTemp);
 		
-		temp0.nSensors = numSensors;
-		gethostname(temp0.host, len);
-		temp0.sensorData = getSensorInfo(2);
-		strcpy(temp0.timestamp, timestamp);
-		temp0.action = 0;
+		temp1.nSensors = numSensors;
+		gethostname(temp1.host, len);
+		temp1.sensorData = getSensorInfo(2);
+		strcpy(temp1.timestamp, timestamp);
+		temp1.action = 0;
 	
 	
 	
 		#ifdef DEBUG
 			printf("Sensor 1 info:\n");
-			printf("Number of sensors: %d\n",temp0.nSensors);
-			printf("Host: %s\n",temp0.host);
-			printf("Temperature: %lf\n",temp0.sensorData);
-			printf("Low Threshold: %lf\n",temp0.lowVal);
-			printf("High Threshold: %lf\n",temp0.highVal);
-			printf("Time: %s\n",temp0.timestamp);
-			printf("Action: %s\n\n",(temp0.action == 0)?"send":"request status");
+			printf("Number of sensors: %d\n",temp1.nSensors);
+			printf("Host: %s\n",temp1.host);
+			printf("Temperature: %lf\n",temp1.sensorData);
+			printf("Low Threshold: %lf\n",temp1.lowVal);
+			printf("High Threshold: %lf\n",temp1.highVal);
+			printf("Time: %s\n",temp1.timestamp);
+			printf("Action: %s\n\n",(temp1.action == 0)?"send":"request status");
 		#endif
 		
 	}

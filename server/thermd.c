@@ -112,9 +112,7 @@ int unpack(struct tempdata * package, int sock)
 					return -1;
 				}
 				totalBytes += inBytes;
-				printf("%d ", totalBytes);
 			}
-			printf("exit ");
 			(package->sensorData) = atof(tmp);
 			free(tmp);
 			break;
@@ -219,7 +217,6 @@ int unpack(struct tempdata * package, int sock)
 			free(tmp);
 			break;
 		}
-		printf("%d, %d, %d\n", i, size, totalBytes); 
 	}
 	
 	return 0;
@@ -234,6 +231,11 @@ int writeToFile(void * param)
 	{
 		perror("Error unpacking structure");
 		return -1;
+	}
+
+	if(package.nSensors == 2)
+	{
+		printf("caught the second batch\n");
 	}
 	
 	#ifdef DEBUG
@@ -252,7 +254,7 @@ int writeToFile(void * param)
 int main( int argc, char *argv[] ){
 
 	int sockfd, port, conn;
-	pthread_t id;
+	pthread_t id1, id2;
 	struct sockaddr_in clientAddr, serverAddr;
 	socklen_t csize = sizeof(clientAddr);
 	
@@ -303,8 +305,9 @@ int main( int argc, char *argv[] ){
 			printf("Client connected from %s\n",inet_ntoa(clientAddr.sin_addr));
 		#endif
 		
-		//pthread_create(&id, NULL, (void * ) writeToFile, (void * ) &conn);
-		writeToFile((void *) &conn);
+		pthread_create(&id1, NULL, (void * ) writeToFile, (void * ) &conn);
+		//pthread_create(&id2, NULL, (void * ) writeToFile, (void * ) &conn);
+		//writeToFile((void *) &conn);
 		
 	}
 
