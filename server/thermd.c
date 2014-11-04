@@ -117,7 +117,6 @@ int unpack(struct tempdata * package, int sock)
 				totalBytes += inBytes;
 			}
 			(package->sensorData) = atof(tmp);
-			printf("%f\n", package->sensorData); 
 			free(tmp);
 			break;
 
@@ -284,8 +283,7 @@ int convertMonth(char * month)
 
 void *  writeToFile(void * param)
 {
-	printf("%ld\n", pthread_self());
-	int * s = (int * ) param;
+	int s = * (int * ) param;
 	FILE * fp;
 	char * year, * month, * day, * weekDay, * hour, * minute, * second;
 	char  * group;
@@ -293,7 +291,7 @@ void *  writeToFile(void * param)
 	char fileString[50] = {0};
 	struct tempdata package1, package2;
 
-	if(unpack(&package1, *s) < 0)
+	if(unpack(&package1, s) < 0)
 	{
 		perror("Error unpacking structure");
 		//return -1;
@@ -301,7 +299,7 @@ void *  writeToFile(void * param)
 
 	if(package1.nSensors == 2)
 	{
-		if(unpack(&package2, *s) < 0)
+		if(unpack(&package2, s) < 0)
 		{
 			perror("Error unpacking structure");
 			//return -1;
@@ -316,7 +314,7 @@ void *  writeToFile(void * param)
 			second = strtok(NULL, " :"); 
 			year = strtok(NULL, " :");
 			group = "g04";
-			sprintf(fileName, "./%s_%s_%d_%s", group, year, convertMonth(month), package1.host);
+			sprintf(fileName, "/afs/nd.edu/user14/cray/Public/%s_%s_%d_%s", group, year, convertMonth(month), package1.host);
 			sprintf(fileString, "%s %d %s %s %s %5.2f %5.2f", year, convertMonth(month), weekDay, hour, minute, package1.sensorData, package2.sensorData);
 			fp = fopen(fileName, "a");
 			fprintf(fp, "%s \n", fileString);
@@ -334,7 +332,7 @@ void *  writeToFile(void * param)
 		second = strtok(NULL, " :"); 
 		year = strtok(NULL, " :");
 		group = "g04";
-		sprintf(fileName, "./%s_%s_%d_%s", group, year, convertMonth(month), package1.host);
+		sprintf(fileName, "/afs/nd.edu/user14/cray/Public/%s_%s_%d_%s", group, year, convertMonth(month), package1.host);
 		sprintf(fileString, "%s %d %s %s %s %f.2", year, convertMonth(month), weekDay, hour, minute, package1.sensorData);
 
 		fp = fopen(fileName, "a");
@@ -416,8 +414,6 @@ int main( int argc, char *argv[] ){
 		new_sock = malloc(1);
 		*new_sock = conn;
 		pthread_create(&id1, NULL, writeToFile, (void *) new_sock);
-		//pthread_join(id1, NULL);
-		//writeToFile((void *) &conn);
 	}
 
 

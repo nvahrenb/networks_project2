@@ -60,7 +60,7 @@ double getSensorInfo(int i){
 	
 	read(fd,&temp,sizeof(temp));
 	
-	float conversion=0.0078125;
+	double conversion=0.0078125;
 	return (temp.measurement0*conversion * 9 / 5 + 32);
 }
 
@@ -391,9 +391,9 @@ int main( int argc, char *argv[] ){
 			return 0;
 		}
 	}
+
 	
 	fclose(error_fp);
-	fclose(fp);
 	free(cLowTemp);
 	free(cHighTemp);
 	close(sockfd);
