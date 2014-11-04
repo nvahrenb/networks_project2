@@ -23,7 +23,9 @@ Project 2 - Thermal Sensor Server
 
 #define DPORT 9765
 
-//#define DEBUG
+#define DEBUG
+
+#define NUMCLIENTS 4
 
 struct tempdata{
 	char host[32];
@@ -281,6 +283,7 @@ int convertMonth(char * month)
 
 int writeToFile(void * param)
 {
+	printf("%ld\n", pthread_self());
 	int * s = (int * ) param;
 	FILE * fp;
 	char * year, * month, * day, * weekDay, * hour, * minute, * second;
@@ -312,9 +315,7 @@ int writeToFile(void * param)
 			second = strtok(NULL, " :"); 
 			year = strtok(NULL, " :");
 			group = "g04";
-			printf("sprintfs\n");
 			sprintf(fileName, "./%s_%s_%d_%s", group, year, convertMonth(month), package1.host);
-			printf("sprintfs\n");
 			sprintf(fileString, "%s %d %s %s %s %5.2f %5.2f", year, convertMonth(month), weekDay, hour, minute, package1.sensorData, package2.sensorData);
 			fp = fopen(fileName, "a");
 			fprintf(fp, "%s \n", fileString);
@@ -353,13 +354,15 @@ int writeToFile(void * param)
 		printf("Time: %s\n",package2.timestamp);
 		printf("Action: %s\n\n",(package2.action == 0)?"send":"request status");
 	#endif
+
+	
 	
 }
 
 int main( int argc, char *argv[] ){
 
-	int sockfd, port, conn, pid;
-	pthread_t id1, id2;
+	int sockfd, port, conn, pid, * new_sock;
+	pthread_t id1, id2, id3, id4;
 	struct sockaddr_in clientAddr, serverAddr;
 	socklen_t csize = sizeof(clientAddr);
 	
@@ -401,25 +404,18 @@ int main( int argc, char *argv[] ){
 	#endif
 	
 	// Begin loop and wait for client connection
-	while(!exit){
+	while((conn = accept(sockfd, (struct sockaddr *)&clientAddr, &csize))){
 	
-		// Accept a connection
-		conn = accept(sockfd, (struct sockaddr *)&clientAddr, &csize);
+		// Accept a connectio
 		
 		#ifdef DEBUG
 			printf("Client connected from %s\n",inet_ntoa(clientAddr.sin_addr));
 		#endif
 		
-		pid = fork();
-		if(pid == 0)
-		{
-			writeToFile((void * ) &conn);
-		}
-		
-		//pthread_create(&id1, NULL, (void * ) writeToFile, (void * ) &conn);
-		//pthread_create(&id2, NULL, (void * ) writeToFile, (void * ) &conn);
+		new_sock = malloc(1);
+		*new_sock = conn;
+		pthread_create(&id1, NULL, (void * ) writeToFile, (void *) new_sock);
 		//writeToFile((void *) &conn);
-		
 	}
 
 
