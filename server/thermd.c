@@ -117,6 +117,7 @@ int unpack(struct tempdata * package, int sock)
 				totalBytes += inBytes;
 			}
 			(package->sensorData) = atof(tmp);
+			printf("%f\n", package->sensorData); 
 			free(tmp);
 			break;
 
@@ -281,7 +282,7 @@ int convertMonth(char * month)
 	}
 }
 
-int writeToFile(void * param)
+void *  writeToFile(void * param)
 {
 	printf("%ld\n", pthread_self());
 	int * s = (int * ) param;
@@ -295,7 +296,7 @@ int writeToFile(void * param)
 	if(unpack(&package1, *s) < 0)
 	{
 		perror("Error unpacking structure");
-		return -1;
+		//return -1;
 	}
 
 	if(package1.nSensors == 2)
@@ -303,7 +304,7 @@ int writeToFile(void * param)
 		if(unpack(&package2, *s) < 0)
 		{
 			perror("Error unpacking structure");
-			return -1;
+			//return -1;
 		}
 		if(package1.action == 0)
 		{
@@ -414,7 +415,8 @@ int main( int argc, char *argv[] ){
 		
 		new_sock = malloc(1);
 		*new_sock = conn;
-		pthread_create(&id1, NULL, (void * ) writeToFile, (void *) new_sock);
+		pthread_create(&id1, NULL, writeToFile, (void *) new_sock);
+		//pthread_join(id1, NULL);
 		//writeToFile((void *) &conn);
 	}
 
