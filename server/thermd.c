@@ -358,7 +358,7 @@ int writeToFile(void * param)
 
 int main( int argc, char *argv[] ){
 
-	int sockfd, port, conn;
+	int sockfd, port, conn, pid;
 	pthread_t id1, id2;
 	struct sockaddr_in clientAddr, serverAddr;
 	socklen_t csize = sizeof(clientAddr);

@@ -1,0 +1,1 @@
+35,36,37 * * * * /afs/nd.edu/user14/cray/cse30264/networks_project2/client/therm student00.cse.nd.edu

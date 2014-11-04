@@ -313,9 +313,9 @@ int writeToFile(void * param)
 			year = strtok(NULL, " :");
 			group = "g04";
 			printf("sprintfs\n");
-			sprintf(fileName, "./%s_%s_%02d_%s", group, year, convertMonth(month), package1.host);
+			sprintf(fileName, "./%s_%s_%d_%s", group, year, convertMonth(month), package1.host);
 			printf("sprintfs\n");
-			sprintf(fileString, "%s %02d %s %s %s %5.2f %5.2f", year, convertMonth(month), weekDay, hour, minute, package1.sensorData, package2.sensorData);
+			sprintf(fileString, "%s %d %s %s %s %5.2f %5.2f", year, convertMonth(month), weekDay, hour, minute, package1.sensorData, package2.sensorData);
 			fp = fopen(fileName, "a");
 			fprintf(fp, "%s \n", fileString);
 			fclose(fp);
@@ -332,8 +332,8 @@ int writeToFile(void * param)
 		second = strtok(NULL, " :"); 
 		year = strtok(NULL, " :");
 		group = "g04";
-		sprintf(fileName, "./%s_%s_%02d_%s", group, year, convertMonth(month), package1.host);
-		sprintf(fileString, "%s %02d %s %s %s %f.2", year, convertMonth(month), weekDay, hour, minute, package1.sensorData);
+		sprintf(fileName, "./%s_%s_%d_%s", group, year, convertMonth(month), package1.host);
+		sprintf(fileString, "%s %d %s %s %s %f.2", year, convertMonth(month), weekDay, hour, minute, package1.sensorData);
 
 		fp = fopen(fileName, "a");
 		fprintf(fp, "%s \n", fileString);
@@ -358,7 +358,7 @@ int writeToFile(void * param)
 
 int main( int argc, char *argv[] ){
 
-	int sockfd, port, conn;
+	int sockfd, port, conn, pid;
 	pthread_t id1, id2;
 	struct sockaddr_in clientAddr, serverAddr;
 	socklen_t csize = sizeof(clientAddr);
@@ -410,7 +410,13 @@ int main( int argc, char *argv[] ){
 			printf("Client connected from %s\n",inet_ntoa(clientAddr.sin_addr));
 		#endif
 		
-		pthread_create(&id1, NULL, (void * ) writeToFile, (void * ) &conn);
+		pid = fork();
+		if(pid == 0)
+		{
+			writeToFile((void * ) &conn);
+		}
+		
+		//pthread_create(&id1, NULL, (void * ) writeToFile, (void * ) &conn);
 		//pthread_create(&id2, NULL, (void * ) writeToFile, (void * ) &conn);
 		//writeToFile((void *) &conn);
 		
