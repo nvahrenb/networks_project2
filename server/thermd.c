@@ -23,11 +23,9 @@ Project 2 - Thermal Sensor Server
 
 #define DPORT 9765
 
-#define DEBUG
+//#define DEBUG
 
-#define NUMCLIENTS 4
-
-struct tempdata{
+struct tempdata{	//structure to hold information about a host and its sensors
 	char host[32];
 	int nSensors;
 	double sensorData;
@@ -37,18 +35,19 @@ struct tempdata{
 	int action;
 };
 
+//function for receiving, converting, and placing information sent from a client into a temp data struct
 int unpack(struct tempdata * package, int sock)
 {
 	int i, inBytes;
 	char * tmp;
 	uint32_t size, totalBytes;
 
-	for(i = 0; i < 7; i++)
+	for(i = 0; i < 7; i++)	//iterate 0-6, filling in each data member of the struct as the information is received
 	{
 		switch(i)
 		{
-			case 0:
-			inBytes = recv(sock, &size, sizeof(size), 0);
+			case 0:	//receiving host name
+			inBytes = recv(sock, &size, sizeof(size), 0);	//getting size of string
 			if(inBytes < 0)
 			{
 				perror("Error receiving buffer size");
@@ -57,7 +56,7 @@ int unpack(struct tempdata * package, int sock)
 			size = ntohl(size);
 
 			totalBytes = 0;
-			while(totalBytes < size)
+			while(totalBytes < size)	//keep receiving information until the full string is received
 			{
 				inBytes = recv(sock, package->host, sizeof(package->host), 0);
 				if(inBytes < 0)
@@ -69,7 +68,7 @@ int unpack(struct tempdata * package, int sock)
 			}
 			break;
 
-			case 1:
+			case 1:	//receiving sensor data
 			inBytes = recv(sock, &size, sizeof(size), 0);
 			if(inBytes < 0)
 			{
@@ -77,10 +76,10 @@ int unpack(struct tempdata * package, int sock)
 				return -1;
 			}
 			size = ntohl(size);
-			tmp = (char * ) malloc(size * sizeof(char));
+			tmp = (char * ) malloc(size * sizeof(char)); //allocating buffer space
 
 			totalBytes = 0;
-			while(totalBytes < size)
+			while(totalBytes < size)	//storing string in tmp buffer
 			{
 				inBytes = recv(sock, tmp, sizeof(tmp), 0);
 				if(inBytes < 0)
@@ -91,11 +90,11 @@ int unpack(struct tempdata * package, int sock)
 				totalBytes += inBytes;
 			}
 
-			(package->nSensors) = atoi(tmp);
-			free(tmp);
+			(package->nSensors) = atoi(tmp); //converting text information back into numeric form
+			free(tmp);	//freeing buffer
 			break;
 
-			case 2:
+			case 2:	//receiving sensor data (temp reading)
 			inBytes = recv(sock, &size, sizeof(size), 0);
 			if(inBytes < 0)
 			{
@@ -120,7 +119,7 @@ int unpack(struct tempdata * package, int sock)
 			free(tmp);
 			break;
 
-			case 3:
+			case 3:	//receiving low temp value
 			inBytes = recv(sock, &size, sizeof(size), 0);
 			if(inBytes < 0)
 			{
@@ -146,7 +145,7 @@ int unpack(struct tempdata * package, int sock)
 			free(tmp);
 			break;
 
-			case 4:
+			case 4:	//receiving high temp value
 			inBytes = recv(sock, &size, sizeof(size), 0);
 			if(inBytes < 0)
 			{
@@ -172,7 +171,7 @@ int unpack(struct tempdata * package, int sock)
 			free(tmp);
 			break;
 
-			case 5:
+			case 5:	//receiving time stamp string
 			inBytes = recv(sock, &size, sizeof(size), 0);
 			if(inBytes < 0)
 			{
@@ -194,7 +193,7 @@ int unpack(struct tempdata * package, int sock)
 			}
 			break;
 
-			case 6:
+			case 6:	//receiving action value
 			inBytes = recv(sock, &size, sizeof(size), 0);
 			if(inBytes < 0)
 			{
@@ -225,6 +224,7 @@ int unpack(struct tempdata * package, int sock)
 	return 0;
 }
 
+//function for converting the month given by time stamp into an integer
 int convertMonth(char * month)
 {
 	if(!strcmp(month, "Jan"))
@@ -281,6 +281,7 @@ int convertMonth(char * month)
 	}
 }
 
+//function for writing to the appropriate file once a client is connected
 void *  writeToFile(void * param)
 {
 	int s = * (int * ) param;
@@ -291,20 +292,20 @@ void *  writeToFile(void * param)
 	char fileString[50] = {0};
 	struct tempdata package1, package2;
 
-	if(unpack(&package1, s) < 0)
+	if(unpack(&package1, s) < 0)	//unpacking information about 1st sensor
 	{
 		perror("Error unpacking structure");
-		//return -1;
+		return 0;
 	}
 
 	if(package1.nSensors == 2)
 	{
-		if(unpack(&package2, s) < 0)
+		if(unpack(&package2, s) < 0)	//unpacking information about 2nd sensor if avaiable
 		{
 			perror("Error unpacking structure");
-			//return -1;
+			return 0;
 		}
-		if(package1.action == 0)
+		if(package1.action == 0)	//storing sensor information in the specified file if not a request status packet
 		{
 			day = strtok(package1.timestamp, " :");
 			month = strtok(NULL, " :"); 
@@ -314,7 +315,7 @@ void *  writeToFile(void * param)
 			second = strtok(NULL, " :"); 
 			year = strtok(NULL, " :");
 			group = "g04";
-			sprintf(fileName, "/afs/nd.edu/user14/cray/Public/%s_%s_%d_%s", group, year, convertMonth(month), package1.host);
+			sprintf(fileName, "/var/log/therm/temp_logs/%s_%s_%d_%s", group, year, convertMonth(month), package1.host);
 			sprintf(fileString, "%s %d %s %s %s %5.2f %5.2f", year, convertMonth(month), weekDay, hour, minute, package1.sensorData, package2.sensorData);
 			fp = fopen(fileName, "a");
 			fprintf(fp, "%s \n", fileString);
@@ -332,7 +333,7 @@ void *  writeToFile(void * param)
 		second = strtok(NULL, " :"); 
 		year = strtok(NULL, " :");
 		group = "g04";
-		sprintf(fileName, "/afs/nd.edu/user14/cray/Public/%s_%s_%d_%s", group, year, convertMonth(month), package1.host);
+		sprintf(fileName, "/var/log/therm/temp_logs/%s_%s_%d_%s", group, year, convertMonth(month), package1.host);
 		sprintf(fileString, "%s %d %s %s %s %f.2", year, convertMonth(month), weekDay, hour, minute, package1.sensorData);
 
 		fp = fopen(fileName, "a");
@@ -355,7 +356,7 @@ void *  writeToFile(void * param)
 	#endif
 
 	
-	free(param);
+	free(param);	//freeing the socket identifier passed to this function
 }
 
 int main( int argc, char *argv[] ){
@@ -364,8 +365,6 @@ int main( int argc, char *argv[] ){
 	pthread_t id1, id2, id3, id4;
 	struct sockaddr_in clientAddr, serverAddr;
 	socklen_t csize = sizeof(clientAddr);
-	
-	int exit = 0;
 	
 	// Open socket
 	if( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ){
@@ -405,7 +404,7 @@ int main( int argc, char *argv[] ){
 	// Begin loop and wait for client connection
 	while((conn = accept(sockfd, (struct sockaddr *)&clientAddr, &csize))){
 	
-		// Accept a connectio
+		// Accept a connection
 		
 		#ifdef DEBUG
 			printf("Client connected from %s\n",inet_ntoa(clientAddr.sin_addr));
@@ -413,8 +412,16 @@ int main( int argc, char *argv[] ){
 		
 		new_sock = malloc(1);
 		*new_sock = conn;
-		pthread_create(&id1, NULL, writeToFile, (void *) new_sock);
+		if(pthread_create(&id1, NULL, writeToFile, (void *) new_sock) < 0) //creating a new thread with each connection
+		{
+			perror("Could not create thread");
+			return 0;
+		}
 	}
 
-
+	if(conn < 0)
+	{
+		perror("Accept failed");
+		return 0;
+	}
 }

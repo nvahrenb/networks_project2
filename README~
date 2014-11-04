@@ -1,0 +1,36 @@
+Christopher Ray
+Nathan Vahrenberg
+Curt Freeland
+CSE 30264
+3 November 2014
+
+Project 2:  Thermal Sensors
+README
+
+Files that should be in archive:
+	server (directory)
+		thermd.c
+		makefile
+
+	client (directory)
+		therm.c
+		makefile
+
+	README
+
+Compile command for both binaries:  	make
+
+Clean up command for both binaries:  	make clean
+
+Execution command for server:  		./thermd
+
+Execution command for client: 		./therm [hostname]	
+
+Please note that cray has a crontab that runs therm on all 4 student machines every 30 minutes (minutes 1 and 31).
+The output files specified in the project document will not be generated and or updated if the thermd is not running on a student machine.
+
+
+	Creating the client and server programs for Project 2 involved solving 3 distinct problems:  getting the client and server to send information back and forth in the first place,  getting the client to serialize a struct and and having the server place everything back into a struct on its end, and finally making the server multithreaded in order to handle multiple clients at once.
+	The first problem was the easiest to solve.  All we did was copy over some of the code used in the FTP project for creating socket/binding sockets, listening, accepting connections, etc.  We then tested whether or not we had the basic server and client communicating with each other by sending test strings over the network.
+	The second problem arose due to the fact that you cannot simply pass a struct as is through the network.  Since we already had experience sending text accross the network, we decided to implement a function on the client side which would send each individual member of a struct accross the network, converting and numeric data members into text where needed.  We then implemented a complimentary function on the server side which took the incoming text and placed the information back in a struct of the same format, converting text information back into numeric form when needed.  
+  

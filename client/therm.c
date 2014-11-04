@@ -30,23 +30,22 @@ written by Jeff Sadowski <jeff.sadowski@gmail.com>
 
 #define DPORT 9765
 
-#define DEBUG
+//#define DEBUG
 
-
-
+//function that returns a sensor temp reading in F
 double getSensorInfo(int i){
 
-	char* fileName;
+	char * fileName;
 
 	if( i == 1 ){
-		fileName = "/dev/gotemp";
+		fileName = "/dev/gotemp";	//read a different sensor based on the value of i
 	}else if( i == 2){
 		fileName = "/dev/gotemp2";
 	}else{
 		return 0;
 	}
 	
-	struct packet {
+	struct packet {				//structure to hold sensor information
 		unsigned char measurements;
 		unsigned char counter;
 		int16_t measurement0;
@@ -54,40 +53,51 @@ double getSensorInfo(int i){
 		int16_t measurement2; 
 	};
 	
-	int fd = open(fileName,O_RDONLY);
+	int fd = open(fileName,O_RDONLY);	//opening the file associated with the desired sensor
 	
 	struct packet temp;
 	
-	read(fd,&temp,sizeof(temp));
+	read(fd,&temp,sizeof(temp));		//placing the relevant information into the temp structure
 	
-	double conversion=0.0078125;
-	return (temp.measurement0*conversion * 9 / 5 + 32);
+	double conversion=0.0078125;		//conversion factor from original code
+	return (temp.measurement0*conversion * 9 / 5 + 32);	//returning the temperature in F
 }
 
-struct tempdata{
+struct tempdata{	//structure to hold information about a host and its sensors
 	char host[32];
 	int nSensors;
 	double sensorData;
 	double lowVal;
 	double highVal;
 	char timestamp[32];
-	int action;
+	int action;	
 };
 
+//function to set all numeric elements of a tempdata struct to 0 if you want a request status packet
+void requestStatus(struct tempdata * temp)
+{
+	(temp->nSensors) = 0;
+	(temp->sensorData) = 0;
+	(temp->lowVal) = 0;
+	(temp->highVal) = 0;
+	(temp->action) = 1;
+}
+
+//function for serializing a struct in order to be sent accross the network
 int packAndSend(struct tempdata * package, int sock)
 {
-	int i, outBytes;
+	int i, outBytes;	
 	uint32_t size;
 	char * str = (char*)malloc(12);
-	FILE *error_fp = fopen("/var/log/therm/error/g04_error_log","a");
+	FILE *error_fp = fopen("/var/log/therm/error/g04_error_log","a"); //opening file where all error messages will be sent
 
-	for(i = 0; i < 7; i++)
+	for(i = 0; i < 7; i++)	//iterate 0-6, converting all necessary data members of package to text before sending to the server
 	{
 		switch(i)
 		{
-			case 0:
+			case 0:	//sending hostname of client
 			size = htonl(sizeof(package->host));
-			outBytes = send(sock, &size, sizeof(size), 0);
+			outBytes = send(sock, &size, sizeof(size), 0);	//sending size so server knows how many bytes to receive
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer size");
@@ -95,7 +105,7 @@ int packAndSend(struct tempdata * package, int sock)
 				return -1;
 			}
 
-			outBytes = send(sock, package->host, sizeof(package->host), 0);
+			outBytes = send(sock, package->host, sizeof(package->host), 0); //sending actual data member
 			if(outBytes < 0)
 			{
 				perror("Error sending buffer");
@@ -104,8 +114,8 @@ int packAndSend(struct tempdata * package, int sock)
 			}
 			break;
 
-			case 1:
-			sprintf(str, "%d", package->nSensors);
+			case 1:	//sending number of sensors of client
+			sprintf(str, "%d", package->nSensors);	//converting numeric data member to a string 
 			size = htonl(sizeof(str));
 			outBytes = send(sock, &size, sizeof(size), 0);
 			if(outBytes < 0)
@@ -124,7 +134,7 @@ int packAndSend(struct tempdata * package, int sock)
 			}
 			break;
 
-			case 2:
+			case 2:	//sending sensor data (temp reading) from client 
 			sprintf(str, "%f", package->sensorData);
 			size = htonl(sizeof(str));
 			outBytes = send(sock, &size, sizeof(size), 0);
@@ -144,7 +154,7 @@ int packAndSend(struct tempdata * package, int sock)
 			}
 			break;
 
-			case 3:
+			case 3: //sending low temperature value for this particular host
 			sprintf(str, "%f", package->lowVal);
 			size = htonl(sizeof(str));
 			outBytes = send(sock, &size, sizeof(size), 0);
@@ -164,7 +174,7 @@ int packAndSend(struct tempdata * package, int sock)
 			}
 			break;
 
-			case 4:
+			case 4:	//sending high temperature value for this particular host
 			sprintf(str, "%f", package->highVal);
 			size = htonl(sizeof(str));
 			outBytes = send(sock, &size, sizeof(size), 0);
@@ -184,7 +194,7 @@ int packAndSend(struct tempdata * package, int sock)
 			}
 			break;
 
-			case 5:
+			case 5:	//sending timestamp string 
 			size = htonl(sizeof(package->timestamp));
 			outBytes = send(sock, &size, sizeof(size), 0);
 			if(outBytes < 0)
@@ -203,7 +213,7 @@ int packAndSend(struct tempdata * package, int sock)
 			}
 			break;
 
-			case 6:
+			case 6: //sending action value
 			sprintf(str, "%d", package->action);
 			size = htonl(sizeof(str));
 			outBytes = send(sock, &size, sizeof(size), 0);
@@ -224,24 +234,24 @@ int packAndSend(struct tempdata * package, int sock)
 			break;
 		}
 	}
-
-	fclose(error_fp);
-	free(str);
+	
+	fclose(error_fp);	//closing error log file
+	free(str);	//freeing string used in numeric conversions
 	return 0;
 }
 
 int main( int argc, char *argv[] ){
 
 	
-	struct tempdata temp0, temp1;
+	struct tempdata temp0, temp1;	//temp0 and temp1 will hold the information for the 2 sensors on a host
 
 	int sockfd, port;
 	struct sockaddr_in serverAddr;
 	struct hostent *hostname;
-	FILE *fp;
-	FILE *error_fp = fopen("/var/log/therm/error/g04_error_log","a");
+	FILE * fp;
+	FILE *error_fp = fopen("/var/log/therm/error/g04_error_log","a");	//opening error log file
 	
-	int exit = 0;
+	int exit = 0;	//this value should never change (i.e. server code should run indefinitely)
 	
 	// Open socket
 	if( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ){
@@ -279,8 +289,7 @@ int main( int argc, char *argv[] ){
 	#endif
 	
 	
-	// Read sensor info to struct
-	
+	// Read sensor info from config file
 	int numSensors = 0;
 	char *cLowTemp = (char*)malloc(5); 
 	char *cHighTemp = (char*)malloc(5);
@@ -295,10 +304,10 @@ int main( int argc, char *argv[] ){
 	getline(&line, &len, fp);
 	
 	numSensors = atoi(line);
-	temp0.nSensors = numSensors;
+	temp0.nSensors = numSensors;	//adding number of sensors for the host
 	temp1.nSensors = numSensors;
 	
-	struct tm *systime;
+	struct tm *systime;		//generating timestamps for each struct
 	time_t rtime;
 	time( &rtime );
 	systime = localtime( &rtime );
@@ -310,7 +319,7 @@ int main( int argc, char *argv[] ){
   }
   timestamp[i] = 0;
 	
-	if(numSensors >= 1){
+	if(numSensors >= 1){	//filling in the rest of the data members for 1 struct 
 		
 		line = NULL;
 		getline(&line, &len, fp);
@@ -338,7 +347,7 @@ int main( int argc, char *argv[] ){
 	
 	}
 	
-	if(numSensors == 2){
+	if(numSensors == 2){ //filling in the data members for the other struct if a 2nd sensor is detected
 		
 		line = NULL;
 		getline(&line, &len, fp);
@@ -371,9 +380,8 @@ int main( int argc, char *argv[] ){
 	// Send struct(s) to server
 	
 	// Send struct 1
-	if(numSensors >= 1){
-		//write(sockfd, (char *)&temp0, sizeof(temp0));
-		if(packAndSend(&temp0, sockfd) < 0)
+	if(numSensors >= 1){	//we will only send the 1st struct if there is only 1 sensor (no structs are sent if 0 sensors)
+		if(packAndSend(&temp0, sockfd) < 0)	//serializing the struct and sending it to the server
 		{
 			perror("Error sending temp0");
 			fprintf(error_fp,"Error sending temp0");
@@ -382,8 +390,7 @@ int main( int argc, char *argv[] ){
 	}
 	
 	// Send struct 2
-	if(numSensors == 2){
-		//write(sockfd, (char *)&temp1, sizeof(temp1));
+	if(numSensors == 2){	//sending the 2nd struct since there if there is a 2nd sensor
 		if(packAndSend(&temp1, sockfd) < 0)
 		{
 			perror("Error sending temp1");
@@ -393,8 +400,9 @@ int main( int argc, char *argv[] ){
 	}
 
 	
-	fclose(error_fp);
-	free(cLowTemp);
-	free(cHighTemp);
-	close(sockfd);
+	fclose(error_fp);	//closing the error log file
+	fclose(fp);		//closing the config file
+	free(cLowTemp);		//freeing the strings used for high and low temp
+	free(cHighTemp);	
+	close(sockfd);		//closing the socket
 }
